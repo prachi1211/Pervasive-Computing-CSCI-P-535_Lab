@@ -1,29 +1,30 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet } from "react-native";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
+import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import {
+  auth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "../firebase";
 
-export default function SignUp() {
+export default function SignUp({ navigation }) {
+  // Add navigation prop
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [birthdate, setBirthdate] = useState(new Date());
-  const [country, setCountry] = useState("USA");
-  const [gender, setGender] = useState("Male");
-  const [biography, setBiography] = useState("");
-
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const onSubmit = () => {
-    console.log({
-      email,
-      password,
-      name,
-      birthdate: birthdate.toDateString(),
-      country,
-      gender,
-      biography,
-    });
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        Alert.alert("Success", "Account created successfully!");
+        // You can also update the user's profile info
+        return user.updateProfile({ displayName: name }).then(() => {
+          navigation.navigate("Home"); // Navigate to Home after sign-up
+        });
+      })
+      .catch((error) => {
+        Alert.alert("Error", error.message);
+      });
   };
 
   return (
@@ -48,51 +49,6 @@ export default function SignUp() {
         onChangeText={setName}
         style={styles.input}
       />
-
-      <Text style={styles.label}>Birthdate:</Text>
-      <Button title="Pick Date" onPress={() => setShowDatePicker(true)} />
-      {showDatePicker && (
-        <DateTimePicker
-          value={birthdate}
-          mode="date"
-          display="default"
-          onChange={(event, date) => {
-            setShowDatePicker(false);
-            if (date) setBirthdate(date);
-          }}
-        />
-      )}
-
-      <Text style={styles.label}>Country:</Text>
-      <Picker
-        selectedValue={country}
-        onValueChange={(itemValue) => setCountry(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="USA" value="USA" />
-        <Picker.Item label="Canada" value="Canada" />
-        <Picker.Item label="India" value="India" />
-      </Picker>
-
-      <Text style={styles.label}>Gender:</Text>
-      <Picker
-        selectedValue={gender}
-        onValueChange={(itemValue) => setGender(itemValue)}
-        style={styles.picker}
-      >
-        <Picker.Item label="Male" value="Male" />
-        <Picker.Item label="Female" value="Female" />
-        <Picker.Item label="Other" value="Other" />
-      </Picker>
-
-      <TextInput
-        placeholder="Biography"
-        value={biography}
-        onChangeText={setBiography}
-        style={styles.input}
-        multiline
-      />
-
       <Button title="Submit" onPress={onSubmit} />
     </View>
   );
@@ -115,13 +71,5 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     padding: 10,
     marginBottom: 15,
-  },
-  picker: {
-    height: 50,
-    width: "100%",
-    marginBottom: 15,
-  },
-  label: {
-    marginBottom: 5,
   },
 });
